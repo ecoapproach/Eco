@@ -36,9 +36,9 @@ sampling_ratio = 0.05
 
 
 
-# SR params to determine 
+# SR params to determine
 SRParamsOptimized = {timeparam:{dataset:[]} for timeparam in timeParams for dataset in datasets}
-candidates_parameters = [1]#np.linspace(-1,1,41)
+candidates_parameters = np.linspace(-1,1,41)
 possibles_gammas = []
 for gamma1 in candidates_parameters:
     for gamma2 in candidates_parameters:
@@ -65,7 +65,7 @@ for dataset in datasets:
     max_t = col-1
     step = int(max_t*sampling_ratio) if int(max_t*sampling_ratio)>0 else 1
     timestamps = [t for t in range(step, max_t + 1, step)]
-    
+
 
     # get X and y
     y_test_ep = ep.iloc[:, 0]
@@ -74,16 +74,16 @@ for dataset in datasets:
     val = pd.read_csv(filepathval, sep='\t', header=None, index_col=None, engine='python')
     nb_observations_val, col = val.shape
     y_test_val = val.iloc[:, 0]
-    
+
     del ep, val
-    
+
     for timecostParam in timeParams:
         timecost = float(timecostParam) * np.arange(max_t+1)
         args_parallel = []
         for elm in possibles_gammas:
             args_parallel.append([elm, timecostParam, ep_probas, ep_preds, val_probas, val_preds, y_test_ep, y_test_val, nb_observations_val, nb_observations_ep, timestamps, timecost, max_t])
         predictions = Parallel(n_jobs=nb_core)(delayed(scoreSR)(func_arg) for func_arg in args_parallel)
-        
+
         index = np.argmin(np.array(predictions))
         print('time : ', timecostParam, 'Dataset', dataset, ' ', possibles_gammas[index])
         SRParamsOptimized[timecostParam][dataset] = possibles_gammas[index]
